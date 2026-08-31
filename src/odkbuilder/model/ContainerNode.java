@@ -52,6 +52,11 @@ public class ContainerNode extends FormNode {
         }
     }
 
+    public void moveTo(FormNode node, ContainerNode newParent, int index) {
+        remove(node);
+        newParent.addAt(index, node);
+    }
+
     @Override
     public String getXlsFormType() {
         return "begin group";
