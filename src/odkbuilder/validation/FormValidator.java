@@ -9,6 +9,9 @@ public class FormValidator {
     public FormValidator() {
         rules.add(new NameSyntaxRule());
         rules.add(new UniqueNameRule());
+        rules.add(new LabelRule());
+        rules.add(new ChoiceListRule());
+        rules.add(new ConstraintSyntaxRule());
     }
 
     public void addRule(ValidationRule rule) {
