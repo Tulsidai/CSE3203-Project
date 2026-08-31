@@ -22,7 +22,18 @@ import odkbuilder.model.FormNode;
 import odkbuilder.model.FormObserver;
 import odkbuilder.viewmodel.FormViewModel;
 
+/*
+ * the View in MVVM.
+ *
+ * When the ViewModel changes it hears about it and redraws.
+ * It never reads the Form direct and it never decides anything.
+ * Every button press turns into one call on the ViewModel.
+ *
+ * Move this app to the web and this is the only layer that gets
+ * rewritten.
+ */
 public class MainWindowView extends JFrame implements FormObserver {
+
     private FormViewModel viewModel;
 
     private CanvasView canvas;
@@ -33,6 +44,7 @@ public class MainWindowView extends JFrame implements FormObserver {
     private JTextField formIdField;
     private JTextField versionField;
 
+    // What the inspector is showing right now.
     private FormNode shownNode = null;
     private boolean loadingSettings = false;
 
@@ -47,6 +59,7 @@ public class MainWindowView extends JFrame implements FormObserver {
         properties = new PropertyInspectorView(viewModel);
         errors = new ValidationSummaryView(viewModel, canvas);
 
+        // Canvas beside properties, errors underneath the pair of them.
         JSplitPane middle = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                 canvas, properties);
         middle.setResizeWeight(0.65);
@@ -55,11 +68,15 @@ public class MainWindowView extends JFrame implements FormObserver {
                 middle, errors);
         whole.setResizeWeight(0.75);
 
+        /*
+         * The palette needs no refrence to the canvas.
+         * Swing carries the dragged text across by itself.
+         */
         add(buildTopBar(), BorderLayout.NORTH);
         add(new PaletteView(), BorderLayout.WEST);
         add(whole, BorderLayout.CENTER);
 
-        viewModel.addObserver(this);
+        viewModel.addObserver(this); // subscribe to the ViewModel
 
         update();
     }
@@ -82,6 +99,7 @@ public class MainWindowView extends JFrame implements FormObserver {
         bar.add(new JLabel("Version:"));
         bar.add(versionField);
 
+        // Two buttons, two strategies. Nothing else differs between them.
         JButton exportXls = new JButton("Export XLSForm (.xlsx)");
         exportXls.addActionListener(new ActionListener() {
             @Override
@@ -102,6 +120,8 @@ public class MainWindowView extends JFrame implements FormObserver {
         return bar;
     }
 
+    // One listener shape for all three settings boxes. The "which" string decides where
+    // the text goes. Not pretty, but it beats three near-identical inner classes.
     private void watch(JTextField field, String which) {
         field.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -134,7 +154,14 @@ public class MainWindowView extends JFrame implements FormObserver {
         });
     }
 
+    /*
+     * picks a file and hands the exporter over to the ViewModel.
+     * This method does not know how either format gets written.
+     */
     private void doExport(FormExporter exporter) {
+
+        // warn, but do not block. Sometimes the file is wanted
+        // anyway, just to see what came out.
         if (viewModel.hasErrors()) {
             int choice = JOptionPane.showConfirmDialog(this,
                     "The form still has " + viewModel.getErrors().size()
@@ -166,6 +193,8 @@ public class MainWindowView extends JFrame implements FormObserver {
         }
     }
 
+    //TODO: only handles spaces. A form id with a slash in it would still give a bad file
+    //name.
     private String safeFileName(String raw) {
         if (raw == null || raw.trim().equals("")) {
             return "form";
@@ -173,6 +202,14 @@ public class MainWindowView extends JFrame implements FormObserver {
         return raw.trim().replace(' ', '_');
     }
 
+    /*
+     * This is the update() the ViewModel calls.
+     *
+     * the inspector only gets rebuilt when the selected node changes.
+     * Rebuild it on every notification and the text box gets swapped out
+     * from under the user while they typing, so the cursor jumps away
+     * after every letter. Found that out the hard way.
+     */
     @Override
     public void update() {
         canvas.refresh();

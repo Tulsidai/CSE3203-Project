@@ -3,7 +3,14 @@ package odkbuilder.export;
 import java.io.File;
 import odkbuilder.model.Form;
 
+/*
+ * The context object. Holds whichever exporter is selected, runs it.
+ *
+ * The ViewModel talks to this class only, so a third format later
+ * (CSV say) changes nothing in the ViewModel or the view.
+ */
 public class ExportContext {
+
     private FormExporter exporter;
 
     public ExportContext(FormExporter exporter) {

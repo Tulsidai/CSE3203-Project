@@ -1,6 +1,8 @@
 package odkbuilder.model;
 
+// Leaf.
 public class IntegerQuestionNode extends QuestionNode {
+
     public IntegerQuestionNode(String name, String label) {
         super(name, label);
     }

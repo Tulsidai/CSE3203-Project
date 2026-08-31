@@ -1,6 +1,8 @@
 package odkbuilder.model;
 
+// leaf.
 public class DateQuestionNode extends QuestionNode {
+
     public DateQuestionNode(String name, String label) {
         super(name, label);
     }

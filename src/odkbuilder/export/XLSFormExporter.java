@@ -9,7 +9,15 @@ import odkbuilder.model.FormNode;
 import odkbuilder.model.ContainerNode;
 import odkbuilder.model.QuestionNode;
 
+/*
+ * Writes the three sheets XLSForm expects: survey, choices, settings.
+ *
+ * The choices sheet is built off the form's choice lists, not off the
+ * questions. Ten questions using yes_no and the list still appears
+ * once, which is what XLSForm wants.
+ */
 public class XLSFormExporter implements FormExporter {
+
     @Override
     public String getFormatName() {
         return "XLSForm spreadsheet";
@@ -28,14 +36,20 @@ public class XLSFormExporter implements FormExporter {
         writer.write(file);
     }
 
+
+    // survey sheet.
     private ArrayList<String[]> buildSurveySheet(Form form) {
         ArrayList<String[]> rows = new ArrayList<String[]>();
 
+        // Column order here must match the order the cells get filled in writeNode(), so do
+        // not shuffle one without the other.
         rows.add(new String[]{
             "type", "name", "label", "hint", "required", "default",
             "constraint", "constraint_message", "relevant", "appearance"
         });
 
+        // Start from the root's children, not the root. Top level of
+        // a form is not wrapped in a group.
         ContainerNode root = form.getRoot();
         for (int i = 0; i < root.getChildren().size(); i++) {
             writeNode(root.getChildren().get(i), rows);
@@ -43,6 +57,11 @@ public class XLSFormExporter implements FormExporter {
         return rows;
     }
 
+    /*
+     * Recursive, because the form is a tree.
+     * A group writes a begin row, asks each child to write itself, then
+     * writes the end row. The children have no idea how deep they are.
+     */
     private void writeNode(FormNode node, ArrayList<String[]> rows) {
         if (node instanceof ContainerNode) {
             ContainerNode group = (ContainerNode) node;
@@ -74,6 +93,7 @@ public class XLSFormExporter implements FormExporter {
         });
     }
 
+    // choices sheet.
     private ArrayList<String[]> buildChoicesSheet(Form form) {
         ArrayList<String[]> rows = new ArrayList<String[]>();
         rows.add(new String[]{"list_name", "name", "label"});
@@ -89,6 +109,7 @@ public class XLSFormExporter implements FormExporter {
         return rows;
     }
 
+    // settings. Two rows and done, nothing clever here.
     private ArrayList<String[]> buildSettingsSheet(Form theForm) {
         ArrayList<String[]> rows = new ArrayList<String[]>();
         rows.add(new String[]{"form_title", "form_id", "version"});

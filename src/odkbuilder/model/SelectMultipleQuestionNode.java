@@ -1,6 +1,8 @@
 package odkbuilder.model;
 
+// Leaf. Only differs from SelectOne by one word.
 public class SelectMultipleQuestionNode extends SelectQuestionNode {
+
     public SelectMultipleQuestionNode(String name, String label, String listName) {
         super(name, label, listName);
     }

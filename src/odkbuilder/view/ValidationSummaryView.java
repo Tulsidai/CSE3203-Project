@@ -15,7 +15,17 @@ import javax.swing.event.ListSelectionListener;
 import odkbuilder.validation.ValidationError;
 import odkbuilder.viewmodel.FormViewModel;
 
+/*
+ * Validation results along the bottom.
+ *
+ * Refreshes every time the ViewModel changes, so nobody has to press
+ * a "check" button.
+ *
+ * Clicking a message selects the guilty question on the canvas.
+ * That is what makes the feedback useful instead of just noisy.
+ */
 public class ValidationSummaryView extends JPanel {
+
     private FormViewModel viewModel;
     private CanvasView canvas;
 
@@ -23,6 +33,8 @@ public class ValidationSummaryView extends JPanel {
     private DefaultListModel<ValidationError> listModel;
     private JList<ValidationError> list;
 
+    // true while the list is being refilled, so clearing it does not fire
+    // the selection listener and drag the canvas somewhere random.
     private boolean refreshing = false;
 
     public ValidationSummaryView(FormViewModel viewModel, CanvasView canvas) {
@@ -39,6 +51,7 @@ public class ValidationSummaryView extends JPanel {
         listModel = new DefaultListModel<ValidationError>();
         list = new JList<ValidationError>(listModel);
 
+        //Click an error, jump to the node.
         list.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -65,6 +78,10 @@ public class ValidationSummaryView extends JPanel {
             listModel.addElement(errors.get(i));
         }
 
+        //Green when clean, red when not. The traffic light is the
+        //entire design system on this project. Colour alone is no
+        //good for somebody colour blind either, so the count is in
+        //the words too.
         if (errors.isEmpty()) {
             heading.setText("No problems found. The form is ready to export.");
             heading.setForeground(new Color(0, 120, 0));

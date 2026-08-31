@@ -2,13 +2,32 @@ package odkbuilder.model;
 
 import java.util.ArrayList;
 
+/*
+ * The whole form. The model in MVVM, and the observable that the
+ * ViewModel watches.
+ *
+ * No Swing anywhere in this package, on purpose. The model and the
+ * validaton have to be testable on their own, and that only true if
+ * the model does not know a window exists.
+ * All it does is call notifyObservers().
+ */
 public class Form extends Observable {
+
     private String title;
     private String formId;
     private String version;
 
+    /*
+     * Top of the tree. A ContainerNode, so the same add / remove / move code
+     * works at the top level and inside a group.
+     *
+     * The exporters skip its own begin/end rows, because the top level of
+     * a form is not wrapped in a group.
+     */
     private ContainerNode root;
 
+    // Choice lists belong to the form, not to the questions. Long reason is
+    // in SelectQuestionNode.
     private ArrayList<ChoiceList> choiceLists = new ArrayList<ChoiceList>();
 
     public Form(String title, String formId) {
@@ -31,6 +50,7 @@ public class Form extends Observable {
         return version;
     }
 
+    //Every setter notifies, so the window redraws as soon as a field change.
     public void setTitle(String title) {
         this.title = title;
         root.setLabel(title);
@@ -45,9 +65,17 @@ public class Form extends Observable {
         notifyObservers();
     }
 
+    /*
+     * ViewModel calls this after it change something in the tree.
+     *
+     * The notify stays here instead of going on every FormNode, which
+     * would mean every little question carrying a list of observers it
+     * never uses.
+     */
     public void formChanged() {
         notifyObservers();
     }
+
 
     public ArrayList<ChoiceList> getChoiceLists() {
         return choiceLists;
@@ -69,6 +97,8 @@ public class Form extends Observable {
         choiceLists.remove(lst);
     }
 
+    //before a list gets deleted, check if any question still pointing at
+    //it. Only possible because the lists are shared.
     public boolean isChoiceListInUse(String listName) {
         ArrayList<FormNode> all = collectAllNodes();
         for (int i = 0; i < all.size(); i++) {
@@ -83,6 +113,15 @@ public class Form extends Observable {
         return false;
     }
 
+    /*
+     * Flattens the tree into one list.
+     *
+     * The validator and both exporters need to visit every node, so the
+     * recursion sits here once instead of three copies.
+     *
+     * The instanceof below is the price of keeping getChildren() off the
+     * leaf classes. Worth it, it stays in this one method.
+     */
     public ArrayList<FormNode> collectAllNodes() {
         ArrayList<FormNode> out = new ArrayList<FormNode>();
         collect(root, out);
@@ -101,4 +140,15 @@ public class Form extends Observable {
         }
     }
 
+
+    // private int countQuestions() {
+    //     int total = 0;
+    //     ArrayList<FormNode> all = collectAllNodes();
+    //     for (int i = 0; i < all.size(); i++) {
+    //         if (all.get(i) instanceof QuestionNode) {
+    //             total++;
+    //         }
+    //     }
+    //     return total;
+    // }
 }

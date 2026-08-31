@@ -10,7 +10,17 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 
+/*
+ * the palette on the left. Pure View, it holds no form data at all.
+ *
+ * Dragging rides on Swing's own JList transfer handler, which ships
+ * the selected row across as plain text. The canvas reads that text
+ * and asks the ViewModel to build the matching node.
+ *
+ * Done so, the palette never has to hear about DateQuestionNode and them.
+ */
 public class PaletteView extends JPanel {
+
     public static final String[] CONTROLS = {
         "Text", "Integer", "Decimal", "Date", "Note",
         "Select One", "Select Multiple", "Group", "Repeat"

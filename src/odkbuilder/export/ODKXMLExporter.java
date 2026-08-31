@@ -12,7 +12,20 @@ import odkbuilder.model.QuestionNode;
 import odkbuilder.model.SelectOneQuestionNode;
 import odkbuilder.model.SelectQuestionNode;
 
+/*
+ * The second exporter. Same model, completely different file, and the
+ * model never changes.
+ *
+ * An ODK XML form has three parts and they get built in order.
+ * The instance is the empty shape of the data, the binds are one line
+ * per question saying its type and rules, and the body is what the
+ * enumarator actually sees.
+ *
+ * Repeats come out as ordinary groups and the choices get listed
+ * inside each select instead of being shared.
+ */
 public class ODKXMLExporter implements FormExporter {
+
     @Override
     public String getFormatName() {
         return "ODK XML form definition";
@@ -47,11 +60,13 @@ public class ODKXMLExporter implements FormExporter {
         xml.append("</h:body>\n");
         xml.append("</h:html>\n");
 
+        //Built in memory first. A form is small, so one write and done.
         FileOutputStream out = new FileOutputStream(file);
         out.write(xml.toString().getBytes("UTF-8"));
         out.close();
     }
 
+    //The empty data shape. Groups become tags with things inside them.
     private void writeInstance(ContainerNode parent, StringBuilder xml) {
         for (int i = 0; i < parent.getChildren().size(); i++) {
             FormNode node = parent.getChildren().get(i);
@@ -66,7 +81,13 @@ public class ODKXMLExporter implements FormExporter {
         }
     }
 
+    // One bind per question. Uses the flat list instead of walking
+    // the tree again, becuase a bind does not care how deep the
+    // question sitting.
     private void writeBinds(Form form, StringBuilder xml) {
+
+        // walk once, keep the list. Calling collectAllNodes() inside the loop
+        // would rebuild the whole thing every turn.
         ArrayList<FormNode> nodes = form.collectAllNodes();
 
         for (int i = 0; i < nodes.size(); i++) {
@@ -76,6 +97,9 @@ public class ODKXMLExporter implements FormExporter {
             }
             QuestionNode question = (QuestionNode) node;
 
+            // TODO: nodeset hardcoded to /data/name, so a question inside a group
+            // points at the wrong place. Needs the full path built up from the
+            // parents. Known bug, still to fix.
             xml.append("<bind nodeset=\"/data/").append(question.getName()).append("\"");
             xml.append(" type=\"").append(xmlType(question)).append("\"");
 
@@ -92,6 +116,13 @@ public class ODKXMLExporter implements FormExporter {
         }
     }
 
+    /*
+     * XLSForm types and XML types are two different vocabularies, so the
+     * translation lives here.
+     *
+     * Not on the model classes, because then the model would know about
+     * XML, and the model is supposed to know about nothing.
+     */
     private String xmlType(QuestionNode question) {
         String type = question.getXlsFormType();
 
@@ -104,9 +135,10 @@ public class ODKXMLExporter implements FormExporter {
         if (type.equals("date")) {
             return "date";
         }
-        return "string";
+        return "string"; // select and note both land here
     }
 
+    // What the enumarator sees.
     private void writeBody(Form form, ContainerNode parent, StringBuilder xml) {
         for (int i = 0; i < parent.getChildren().size(); i++) {
             FormNode node = parent.getChildren().get(i);
@@ -129,6 +161,8 @@ public class ODKXMLExporter implements FormExporter {
     }
 
     private void writeSelect(Form form, SelectQuestionNode question, StringBuilder xml) {
+
+        //select1 for one answer, select for many. XForms name them so.
         String tag = "select";
         if (question instanceof SelectOneQuestionNode) {
             tag = "select1";
@@ -151,6 +185,7 @@ public class ODKXMLExporter implements FormExporter {
         xml.append("</").append(tag).append(">\n");
     }
 
+    // &, < and > mean somthing in XML, so swap them out first.
     private String clean(String text) {
         if (text == null) {
             return "";

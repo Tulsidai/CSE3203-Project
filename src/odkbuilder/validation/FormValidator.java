@@ -3,7 +3,15 @@ package odkbuilder.validation;
 import java.util.ArrayList;
 import odkbuilder.model.Form;
 
+/*
+ * The context object. Holds every rule and runs the lot of them.
+ * A form has to satisfy all of them at once, not pick one.
+ *
+ * Outside this class nobody calls anything but validate(), so rules
+ * can be added or dropped without touching the ViewModel or the view.
+ */
 public class FormValidator {
+
     private ArrayList<ValidationRule> rules = new ArrayList<ValidationRule>();
 
     public FormValidator() {
@@ -21,6 +29,7 @@ public class FormValidator {
         return rules;
     }
 
+    // every rule, every time. One flat list back.
     public ArrayList<ValidationError> validate(Form form) {
         ArrayList<ValidationError> all = new ArrayList<ValidationError>();
         for (int i = 0; i < rules.size(); i++) {

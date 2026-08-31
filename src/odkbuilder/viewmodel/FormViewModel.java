@@ -22,7 +22,19 @@ import odkbuilder.model.TextQuestionNode;
 import odkbuilder.validation.FormValidator;
 import odkbuilder.validation.ValidationError;
 
+/*
+ * The ViewModel in MVVM. Sits between the window and the model and is
+ * the only class that knows both sides.
+ *
+ * No Swing imports, so all of this can be tested by calling methods
+ * and reading the answers back.
+ *
+ * It implements FormObserver so it hears the Form change, and extends
+ * Observable so the window hears it change.
+ * Model to ViewModel to View, and the Form never hear about the window.
+ */
 public class FormViewModel extends Observable implements FormObserver {
+
     private Form form;
     private FormValidator validator;
     private ExportContext exportContext;
@@ -30,16 +42,23 @@ public class FormViewModel extends Observable implements FormObserver {
     private FormNode selectedNode;
     private ArrayList<ValidationError> errors = new ArrayList<ValidationError>();
 
+    // So new controls get a name nobody using yet.
     private int nameCounter = 1;
 
     public FormViewModel(Form form, FormValidator validator, ExportContext exportContext) {
         this.form = form;
         this.validator = validator;
         this.exportContext = exportContext;
-        this.form.addObserver(this);
+        this.form.addObserver(this); // subscribe to the model
         runValidation();
     }
 
+    /*
+     * The Form calls this when it changes.
+     *
+     * Revalidation happens here and not in every single method, so it is
+     * impossible to edit the form and forget to check it.
+     */
     @Override
     public void update() {
         runValidation();
@@ -64,16 +83,27 @@ public class FormViewModel extends Observable implements FormObserver {
         notifyObservers();
     }
 
+
     private void runValidation() {
         errors = validator.validate(form);
     }
 
+
+    /*
+     * Called when something gets dropped from the palette.
+     *
+     * dropTarget is whatever node was under the mouse. Group or repeat,
+     * the new control goes inside it. A question, it goes in that
+     * question parent, right below it.
+     * That is what people expect when they drop one row on another.
+     */
     public FormNode addControl(String paletteType, FormNode dropTarget) {
         FormNode newNode = createNode(paletteType);
         if (newNode == null) {
             return null;
         }
 
+        // Dropped on nothing at all, so it belongs at the top level.
         if (dropTarget == null) {
             dropTarget = form.getRoot();
         }
@@ -94,6 +124,15 @@ public class FormViewModel extends Observable implements FormObserver {
         return newNode;
     }
 
+    /*
+     * builds the right object for whatever palette row got dragged.
+     *
+     * The one place in the program that names the concrete node classes.
+     * Everywhere else works through FormNode.
+     *
+     * TODO: this if-chain grows with every new control type.
+     * One more and it becomes a proper factory.
+     */
     private FormNode createNode(String paletteType) {
         String name = "q" + nameCounter;
         nameCounter++;
@@ -124,9 +163,10 @@ public class FormViewModel extends Observable implements FormObserver {
         if (paletteType.equals("Repeat")) {
             return new RepeatNode("r" + name, "");
         }
-        return null;
+        return null; //palette text nobody recognises, so build nothing
     }
 
+    // Root cannot be deleted. It is the form itself.
     public void deleteSelected() {
         if (selectedNode == null || selectedNode == form.getRoot()) {
             return;
@@ -154,10 +194,19 @@ public class FormViewModel extends Observable implements FormObserver {
         form.formChanged();
     }
 
+    /*
+     * Property inspector calls this after an edit.
+     *
+     * notifyObservers() stays out of the setters on FormNode on purpose.
+     * The model would fire dozens of times while somebody still typing.
+     */
     public void nodeEdited() {
         form.formChanged();
     }
 
+
+    // hand back the existing one if the name is taken. Two lists with the
+    // same name would break the choices sheet.
     public ChoiceList createChoiceList(String listName) {
         ChoiceList existing = form.findChoiceList(listName);
         if (existing != null) {
@@ -178,6 +227,11 @@ public class FormViewModel extends Observable implements FormObserver {
         form.formChanged();
     }
 
+    /*
+     * refuses to delete a shared list while a question still pointing at
+     * it. Without the shared-list design this check could not even exist,
+     * there would be no one list to check against.
+     */
     public boolean deleteChoiceList(ChoiceList list) {
         if (form.isChoiceListInUse(list.getListName())) {
             return false;
@@ -187,10 +241,15 @@ public class FormViewModel extends Observable implements FormObserver {
         return true;
     }
 
+
     public boolean hasErrors() {
         return !errors.isEmpty();
     }
 
+    /*
+     * Swaps the exporter in and runs it.
+     * The ViewModel never names a file format itself.
+     */
     public void exportForm(FormExporter exporter, File file) throws Exception {
         exportContext.setExporter(exporter);
         exportContext.doExport(form, file);

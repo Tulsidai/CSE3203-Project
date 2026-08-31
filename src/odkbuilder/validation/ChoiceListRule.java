@@ -6,7 +6,15 @@ import odkbuilder.model.Form;
 import odkbuilder.model.FormNode;
 import odkbuilder.model.SelectQuestionNode;
 
+/*
+ * Three different things can go wrong, reported separate so the user knows
+ * which one it is:
+ *   1. no list name at all
+ *   2. names a list that does not exist on the form
+ *   3. list exists but empty
+ */
 public class ChoiceListRule implements ValidationRule {
+
     @Override
     public String getRuleName() {
         return "Choice lists";
@@ -20,6 +28,7 @@ public class ChoiceListRule implements ValidationRule {
         for (int i = 0; i < nodes.size(); i++) {
             FormNode node = nodes.get(i);
 
+            //Only select questions matter here, and the tree hands over every node there is.
             if (!(node instanceof SelectQuestionNode)) {
                 continue;
             }

@@ -1,6 +1,9 @@
 package odkbuilder.model;
 
+// One row on the choices sheet. name is what gets saved,
+// label is what the enumerator reads.
 public class ChoiceItem {
+
     private String name;
     private String label;
 

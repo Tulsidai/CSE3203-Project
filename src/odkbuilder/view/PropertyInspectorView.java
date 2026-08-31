@@ -28,13 +28,30 @@ import odkbuilder.model.QuestionNode;
 import odkbuilder.model.SelectQuestionNode;
 import odkbuilder.viewmodel.FormViewModel;
 
+/*
+ * The property inspector on the right.
+ *
+ * Rebuilt whenever a different node gets selected, and which boxes
+ * turn up depends on the kind of node. A Date question has no choice
+ * list, a Group has no constraint.
+ * Showing every box for every node would only confuse the user.
+ *
+ * One listener serves every text box. Anything typed, applyChanges()
+ * reads them all and copies the lot onto the node.
+ * Only one place to look if a property ever stops saving.
+ */
 public class PropertyInspectorView extends JPanel {
+
     private FormViewModel viewModel;
 
+    // Node being edited right now.
     private FormNode node;
 
+    // True while the boxes are being filled from the model, so that writing
+    // does not get mistaken for the user typing.
     private boolean loading = false;
 
+    //The boxes. Some stay null when they do not apply to this node.
     private JTextField nameBox;
     private JTextField labelBox;
     private JTextField hintBox;
@@ -60,6 +77,7 @@ public class PropertyInspectorView extends JPanel {
         showNode(null);
     }
 
+    // builds the panel over again for whatever just got selected.
     public void showNode(FormNode selected) {
         loading = true;
         this.node = selected;
@@ -79,6 +97,8 @@ public class PropertyInspectorView extends JPanel {
         labelBox = addTextBox("Label", selected.getLabel());
         hintBox = addTextBox("Hint", selected.getHint());
 
+        // everything under here is question only. A group has no default value or constraint,
+        // so groups and repeats stop right there.
         if (selected instanceof QuestionNode) {
             QuestionNode question = (QuestionNode) selected;
             requiredBox = new JCheckBox("Required");
@@ -107,6 +127,8 @@ public class PropertyInspectorView extends JPanel {
         loading = false;
     }
 
+    // Copies whatever in the boxes onto the node, then tells the ViewModel the edit done so it
+    // can revalidate and redraw.
     private void applyChanges() {
         if (loading || node == null) {
             return;
@@ -128,6 +150,8 @@ public class PropertyInspectorView extends JPanel {
         viewModel.nodeEdited();
     }
 
+    // Null them out before a rebuild, else applyChanges() could still be
+    // holding a box that no longer on screen.
     private void clearBoxes() {
         nameBox = null;
         labelBox = null;
@@ -140,10 +164,18 @@ public class PropertyInspectorView extends JPanel {
         appearanceBox = null;
     }
 
+
+    /*
+     * The drop-down lists every choice list already on the form, so
+     * reusing yes_no across twenty questions is one click instead of
+     * typing the choices out again.
+     */
     private void addChoiceListSection(SelectQuestionNode question) {
+
         addWide(new JLabel(" "));
         addWide(new JLabel("<html><b>Choice list</b></html>"));
 
+        // editable, so you can type a brand new list name too.
         JComboBox<String> listBox = new JComboBox<String>();
         listBox.setEditable(true);
         for (int i = 0; i < viewModel.getForm().getChoiceLists().size(); i++) {
@@ -163,7 +195,7 @@ public class PropertyInspectorView extends JPanel {
                 viewModel.createChoiceList(listName);
                 question.setListName(listName);
                 viewModel.nodeEdited();
-                showNode(question);
+                showNode(question); // redraw so the choices show up
             }
         });
         addWide(useList);
@@ -221,12 +253,16 @@ public class PropertyInspectorView extends JPanel {
         buttons.add(removeChoice);
         addWide(buttons);
 
+        // Warn them, because sharing cuts both ways.
         if (list != null && viewModel.getForm().isChoiceListInUse(list.getListName())) {
             addWide(new JLabel("<html><small>This list is shared. Editing it changes"
                     + "<br>every question that uses it.</small></html>"));
         }
     }
 
+
+    // Whatever changes, all the boxes get reread, so exactly one
+    // method writes to the model.
     private DocumentListener sharedListener = new DocumentListener() {
         @Override
         public void insertUpdate(DocumentEvent e) {
@@ -260,6 +296,7 @@ public class PropertyInspectorView extends JPanel {
         layout.anchor = GridBagConstraints.WEST;
     }
 
+    //Caption in column 0, box in column 1.
     private void addRow(String caption, JComponent box) {
         layout.gridx = 0;
         layout.gridy = row;
@@ -273,6 +310,8 @@ public class PropertyInspectorView extends JPanel {
         row++;
     }
 
+    // Straight across both columns. Reset gridwidth after, or
+    // every row after this one comes out wide too.
     private void addWide(JComponent box) {
         layout.gridx = 0;
         layout.gridy = row;
@@ -283,6 +322,8 @@ public class PropertyInspectorView extends JPanel {
         row++;
     }
 
+    //empty panel at the bottom soaks up the spare height and pushes
+    //everything else up to the top.
     private void finishLayout() {
         layout.gridx = 0;
         layout.gridy = row;

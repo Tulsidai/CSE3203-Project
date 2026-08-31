@@ -17,10 +17,28 @@ import odkbuilder.model.TextQuestionNode;
 import odkbuilder.validation.FormValidator;
 import odkbuilder.validation.ValidationError;
 
+/*
+ * a test that runs from the command line with no window at all.
+ *
+ * Building a form, validating it and exporting it without Swing ever
+ * starting is the proof that the layers really are seperate, and not
+ * just separate folders. Let one Swing import creep into the model
+ * and this class stops running.
+ *
+ * A library stocktake, becuase a library has one Book title and
+ * several BookCopies of it. That is what a repeat is for.
+ *
+ * Run it with:  java -cp build odkbuilder.SelfTest
+ */
 public class SelfTest {
+
     public static void main(String[] args) throws Exception {
+
         Form form = new Form("Library Stocktake", "library_stocktake");
 
+        //Two lists, each defined ONCE and shared. condition gets used
+        //inside the repeat, so every copy of the book is graded off the
+        //same list without it being stored twice.
         ChoiceList genre = new ChoiceList("genre");
         genre.addChoice(new ChoiceItem("fiction", "Fiction"));
         genre.addChoice(new ChoiceItem("nonfiction", "Non-fiction"));
@@ -36,6 +54,7 @@ public class SelfTest {
         form.getRoot().add(new NoteQuestionNode("intro",
                 "Complete one form for each title on the shelf."));
 
+        // the book itself
         TextQuestionNode title = new TextQuestionNode("book_title", "Title of the book");
         title.setRequired(true);
         form.getRoot().add(title);
@@ -48,11 +67,18 @@ public class SelfTest {
                 new SelectOneQuestionNode("genre", "Genre", "genre");
         form.getRoot().add(bookGenre);
 
+        // a group, to show nesting works
         ContainerNode shelf = new ContainerNode("shelf_location", "Shelf location");
         shelf.add(new TextQuestionNode("section", "Section"));
         shelf.add(new IntegerQuestionNode("shelf_number", "Shelf number"));
         form.getRoot().add(shelf);
 
+        /*
+         * A repeat, one entry per physical copy.
+         *
+         * title, author and genre recorded once. Condition recorded separate
+         * for every copy, and that is the whole job of a repeat.
+         */
         RepeatNode copies = new RepeatNode("copies", "Copies of this title");
         TextQuestionNode accession =
                 new TextQuestionNode("accession_no", "Accession number");
@@ -77,6 +103,8 @@ public class SelfTest {
         form.getRoot().add(copies);
         form.getRoot().add(new DateQuestionNode("checked_on", "Date checked"));
 
+
+        // this form should come back clean
         FormValidator validator = new FormValidator();
         ArrayList<ValidationError> errors = validator.validate(form);
 
@@ -87,9 +115,11 @@ public class SelfTest {
             System.out.println("   " + errors.get(i));
         }
 
+        //now break it on purpose, so every rule gets a turn
         System.out.println();
         System.out.println("Breaking the form on purpose:");
 
+        // duplicate name, empty label and an unclosed bracket, all in one.
         TextQuestionNode duplicate = new TextQuestionNode("author", "");
         duplicate.setConstraint("(. > 5");
         form.getRoot().add(duplicate);
@@ -102,9 +132,11 @@ public class SelfTest {
             System.out.println("   " + errors.get(i));
         }
 
+        //Put it back how it was before exporting anything.
         form.getRoot().remove(duplicate);
         form.getRoot().remove(broken);
 
+        //both exporters, one model, two files
         System.out.println();
         File spreadsheet = new File("library_stocktake.xlsx");
         new XLSFormExporter().export(form, spreadsheet);
