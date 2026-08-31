@@ -1,6 +1,6 @@
 package odkbuilder.model;
 
-public class DateQuestionNode extends FormNode {
+public class DateQuestionNode extends QuestionNode {
     public DateQuestionNode(String name, String label) {
         super(name, label);
     }

@@ -1,6 +1,6 @@
 package odkbuilder.model;
 
-public class DecimalQuestionNode extends FormNode {
+public class DecimalQuestionNode extends QuestionNode {
     public DecimalQuestionNode(String name, String label) {
         super(name, label);
     }
