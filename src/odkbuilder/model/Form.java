@@ -2,7 +2,7 @@ package odkbuilder.model;
 
 import java.util.ArrayList;
 
-public class Form {
+public class Form extends Observable {
     private String title;
     private String formId;
     private String version;
@@ -34,12 +34,19 @@ public class Form {
     public void setTitle(String title) {
         this.title = title;
         root.setLabel(title);
+        notifyObservers();
     }
     public void setFormId(String formId) {
         this.formId = formId;
+        notifyObservers();
     }
     public void setVersion(String version) {
         this.version = version;
+        notifyObservers();
+    }
+
+    public void formChanged() {
+        notifyObservers();
     }
 
     public ArrayList<ChoiceList> getChoiceLists() {
