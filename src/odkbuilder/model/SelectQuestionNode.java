@@ -1,28 +1,24 @@
 package odkbuilder.model;
 
-import java.util.ArrayList;
-
 public abstract class SelectQuestionNode extends QuestionNode {
-    private ArrayList<ChoiceItem> choices = new ArrayList<ChoiceItem>();
+    private String listName;
 
-    public SelectQuestionNode(String name, String label) {
+    public SelectQuestionNode(String name, String label, String listName) {
         super(name, label);
+        this.listName = listName;
     }
 
     protected abstract String getSelectKeyword();
 
     @Override
     public String getXlsFormType() {
-        return getSelectKeyword() + " " + getName();
+        return getSelectKeyword() + " " + listName;
     }
 
-    public ArrayList<ChoiceItem> getChoices() {
-        return choices;
+    public String getListName() {
+        return listName;
     }
-    public void addChoice(ChoiceItem c) {
-        choices.add(c);
-    }
-    public void removeChoice(ChoiceItem c) {
-        choices.remove(c);
+    public void setListName(String listName) {
+        this.listName = listName;
     }
 }

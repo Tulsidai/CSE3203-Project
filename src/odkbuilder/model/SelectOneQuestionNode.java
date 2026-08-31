@@ -1,8 +1,8 @@
 package odkbuilder.model;
 
 public class SelectOneQuestionNode extends SelectQuestionNode {
-    public SelectOneQuestionNode(String name, String label) {
-        super(name, label);
+    public SelectOneQuestionNode(String name, String label, String listName) {
+        super(name, label, listName);
     }
 
     @Override
