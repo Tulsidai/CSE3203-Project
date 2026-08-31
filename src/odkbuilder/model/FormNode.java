@@ -5,6 +5,8 @@ public abstract class FormNode {
     private String label;
     private String hint;
 
+    private ContainerNode parent;
+
     public FormNode(String name, String label) {
         this.name = name;
         this.label = label;
@@ -34,6 +36,13 @@ public abstract class FormNode {
     }
     public void setHint(String hint) {
         this.hint = hint;
+    }
+
+    public ContainerNode getParent() {
+        return parent;
+    }
+    public void setParent(ContainerNode parent) {
+        this.parent = parent;
     }
 
     @Override
